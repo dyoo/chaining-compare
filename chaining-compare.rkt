@@ -20,6 +20,24 @@
 (provide chaining-compare)
 
 
+;; Creates temporaries, and uses the source locations from the srcs.
+;; We'll see if this functionality already exists in Racket.
+(define-for-syntax (generate-temporaries/locs lst srcs)
+  (let ([temps (generate-temporaries lst)])
+    (map (lambda (stx src)
+           (datum->syntax stx
+                          (syntax-e stx)
+                          (list (syntax-source src)
+                                (syntax-line src)
+                                (syntax-column src)
+                                (syntax-position src)
+                                (syntax-span src))
+                          stx
+                          stx))
+         temps
+         (syntax->list srcs))))
+
+
 (define-for-syntax (make-binop-comparison lhs operator rhs src-stx)
   (datum->syntax src-stx
                  `(,operator ,lhs ,rhs)
@@ -43,13 +61,7 @@
     (make-binop-comparison #'lhs #'operator #'rhs stx)]
 
    [(lhs operator rhs second-operator second-rhs rest-of-chain ...)
-    (with-syntax ([rhs-value (datum->syntax #f
-                                            (gensym 'rhs-value)
-                                            (list (syntax-source #'rhs)
-                                                  (syntax-line #'rhs)
-                                                  (syntax-column #'rhs)
-                                                  (syntax-position #'rhs)
-                                                  (syntax-span #'rhs)))])
+    (with-syntax ([(rhs-value) (generate-temporaries/locs #'(rhs) #'(rhs))])
       (quasisyntax/loc stx
         (let ([rhs-value rhs])
           (if #,(make-binop-comparison #'lhs #'operator #'rhs-value original-stx)
