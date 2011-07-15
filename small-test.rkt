@@ -1,8 +1,16 @@
 #lang s-exp "small-lang.rkt"
 
 
-(require (planet dyoo/chaining-compare))
+(require (rename-in (planet dyoo/chaining-compare) (chaining-compare compare)))
 
 (printf "hi\n")
 
-(chaining-compare (+ 1 1) < (+ 2 2) <= 5 < (* 2 3) < 7)
+(compare (+ 1 1) < (+ 2 2) <= 5 < (* 2 3) < 7)
+
+
+
+;; We want the error messages to be very specific
+#;(compare)
+#;compare
+
+(compare 3 > 4)

@@ -60,25 +60,36 @@
    [(lhs operator rhs)
     (make-binop-comparison #'lhs #'operator #'rhs original-stx)]
 
-   [(lhs operator rhs second-operator second-rhs rest-of-chain ...)
+   [(lhs operator rhs rest-of-chain ...)
     (with-syntax ([(rhs-value) (generate-temporaries/locs #'(rhs) #'(rhs))])
       (quasisyntax/loc stx
         (let ([rhs-value rhs])
           (if #,(make-binop-comparison #'lhs #'operator #'rhs-value original-stx)
-              #,(build-chain #'(rhs-value second-operator second-rhs rest-of-chain ...)
+              #,(build-chain #'(rhs-value rest-of-chain ...)
                              original-stx)
-              #f))))]
-    
-   ;; Error production
-   [else
-    (raise-syntax-error #f "Expected operands separated by binary operators"
-                        original-stx)]))
+              #f))))]))
 
 
+
+;; Do a bit of error trapping here, before delegating off to the helper function build-chain.
 (define-syntax (chaining-compare stx)
   (syntax-case stx ()
-    [(_ lhs y ...)
+    [_
+     (identifier? stx)
+     (raise-syntax-error #f 
+                         (format "Expected operands separated by binary operators.  e.g. (~a 3 <= 4 < 5)"
+                                 (syntax->datum stx))
+                         stx)]
+    
+    [(_ lhs op rhs y ...)
+     (even? (length (syntax->list #'(y ...))))
      (with-syntax ([(lhs-v) (generate-temporaries/locs #'(lhs) #'(lhs))])
        (quasisyntax/loc stx
          (let ([lhs-v lhs])
-           #,(build-chain #'(lhs-v y ...) stx))))]))
+           #,(build-chain #'(lhs-v op rhs y ...) stx))))]
+    
+    [(macro-name x ...)
+     (raise-syntax-error #f 
+                         (format "Expected operands separated by binary operators.  e.g. (~a 3 <= 4 < 5)"
+                                 (syntax->datum #'macro-name))
+                         stx)]))
