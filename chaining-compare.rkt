@@ -77,5 +77,8 @@
 
 (define-syntax (chaining-compare stx)
   (syntax-case stx ()
-    [(_ x ...)
-     (build-chain #'(x ...) stx)]))
+    [(_ lhs y ...)
+     (with-syntax ([(lhs-v) (generate-temporaries/locs #'(lhs) #'(lhs))])
+       (quasisyntax/loc stx
+         (let ([lhs-v lhs])
+           #,(build-chain #'(lhs-v y ...) stx))))]))
