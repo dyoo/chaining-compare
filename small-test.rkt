@@ -5,4 +5,4 @@
 
 (printf "hi\n")
 
-(chaining-compare 3 < (+ 2 2) < 5 < 6 < 7)
+(chaining-compare 3 < (+ 2 2) <= 5 < 6 < 7)

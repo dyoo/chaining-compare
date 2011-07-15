@@ -58,7 +58,7 @@
 (define-for-syntax (build-chain stx original-stx)
   (syntax-case stx ()
    [(lhs operator rhs)
-    (make-binop-comparison #'lhs #'operator #'rhs stx)]
+    (make-binop-comparison #'lhs #'operator #'rhs original-stx)]
 
    [(lhs operator rhs second-operator second-rhs rest-of-chain ...)
     (with-syntax ([(rhs-value) (generate-temporaries/locs #'(rhs) #'(rhs))])
