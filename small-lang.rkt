@@ -10,6 +10,6 @@
   (syntax-case stx ()
     [(_ op rand ...)
      (quasisyntax/loc stx
-       (begin (printf "applying ~e\n" (list (object-name op) rand ...))
+       (begin (printf "applying ~s\n" (list (object-name op) rand ...))
               #,(syntax/loc stx
                   (op rand ...))))]))
