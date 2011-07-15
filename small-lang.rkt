@@ -10,5 +10,5 @@
   (syntax-case stx ()
     [(_ op rand ...)
      (syntax/loc stx
-       (begin (#%app printf "applying ~e\n" (#%app list op rand ...))
+       (begin (#%app printf "applying ~e\n" (#%app list (#%app object-name op) rand ...))
               (#%app op rand ...)))]))
