@@ -21,32 +21,30 @@
 
 
 (define-for-syntax (make-binop-comparison lhs operator rhs src-stx)
- (with-syntax ([lhs lhs]
-               [operator operator]
-               [rhs rhs])
-   (datum->syntax src-stx
-                  `(,#'operator ,#'lhs ,#'rhs)
-                  (list (syntax-source #'lhs)
-                        (syntax-line #'lhs)
-                        (syntax-column #'lhs)
-                        (syntax-position #'lhs)
-                        (if (and (number? (syntax-position #'lhs))
-                                 (number? (syntax-position #'rhs))
-                                 (number? (syntax-span #'rhs)))
+  (datum->syntax src-stx
+                 `(,operator ,lhs ,rhs)
+                 (list (syntax-source lhs)
+                       (syntax-line lhs)
+                       (syntax-column lhs)
+                       (syntax-position lhs)
+                       (if (and (number? (syntax-position lhs))
+                                (number? (syntax-position rhs))
+                                (number? (syntax-span rhs)))
+                           
+                           (- (+ (syntax-position rhs)
+                                 (syntax-span rhs))
+                              (syntax-position lhs))
+                           #f))))
 
-                            (- (+ (syntax-position #'rhs)
-                                  (syntax-span #'rhs))
-                               (syntax-position #'lhs))
-                            #f)))))
 
-(define-syntax (chaining-compare stx)
- (syntax-case stx ()
-   [(_ lhs operator rhs)
+(define-for-syntax (build-chain stx original-stx)
+  (syntax-case stx ()
+   [(lhs operator rhs)
     (make-binop-comparison #'lhs #'operator #'rhs stx)]
 
-   [(_ lhs operator rhs
-       second-operator second-rhs rest-of-chain ...)
-    (with-syntax ([rhs-value (datum->syntax #f 'rhs-value
+   [(lhs operator rhs second-operator second-rhs rest-of-chain ...)
+    (with-syntax ([rhs-value (datum->syntax #f
+                                            (gensym 'rhs-value)
                                             (list (syntax-source #'rhs)
                                                   (syntax-line #'rhs)
                                                   (syntax-column #'rhs)
@@ -54,12 +52,18 @@
                                                   (syntax-span #'rhs)))])
       (quasisyntax/loc stx
         (let ([rhs-value rhs])
-          (if #,(make-binop-comparison #'lhs #'operator #'rhs-value stx)
-              (chaining-compare rhs-value second-operator second-rhs
-rest-of-chain ...)
+          (if #,(make-binop-comparison #'lhs #'operator #'rhs-value original-stx)
+              #,(build-chain #'(rhs-value second-operator second-rhs rest-of-chain ...)
+                             original-stx)
               #f))))]
-
+    
    ;; Error production
    [else
     (raise-syntax-error #f "Expected operands separated by binary operators"
-                        stx)]))
+                        original-stx)]))
+
+
+(define-syntax (chaining-compare stx)
+  (syntax-case stx ()
+    [(_ x ...)
+     (build-chain #'(x ...) stx)]))
