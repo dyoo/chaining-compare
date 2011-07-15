@@ -9,6 +9,7 @@
 (define-syntax (my-app stx)
   (syntax-case stx ()
     [(_ op rand ...)
-     (syntax/loc stx
+     (quasisyntax/loc stx
        (begin (#%app printf "applying ~e\n" (#%app list (#%app object-name op) rand ...))
-              (#%app op rand ...)))]))
+              #,(syntax/loc stx
+                  (#%app op rand ...))))]))
