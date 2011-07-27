@@ -15,7 +15,8 @@
 ;;
 ;;
 
-(require (for-syntax racket/base))
+(require (for-syntax racket/base)
+         (for-syntax syntax/srcloc))
 
 (provide chaining-compare)
 
@@ -30,21 +31,25 @@
 
 
 (define-for-syntax (make-binop-comparison lhs operator rhs src-stx)
-  (datum->syntax src-stx
-                 `(,operator ,lhs ,rhs)
-                 (list (syntax-source lhs)
-                       (syntax-line lhs)
-                       (syntax-column lhs)
-                       (syntax-position lhs)
-                       (if (and (number? (syntax-position lhs))
-                                (number? (syntax-position rhs))
-                                (number? (syntax-span rhs)))
-                           
-                           (- (+ (syntax-position rhs)
-                                 (syntax-span rhs))
-                              (syntax-position lhs))
-                           #f))))
-
+  (let ([loc-stx (build-source-location-syntax
+                  (list (syntax-source lhs)
+                        (syntax-line lhs)
+                        (syntax-column lhs)
+                        (syntax-position lhs)
+                        (if (and (number? (syntax-position lhs))
+                                 (number? (syntax-position rhs))
+                                 (number? (syntax-span rhs)))
+                            (- (+ (syntax-position rhs)
+                                  (syntax-span rhs))
+                               (syntax-position lhs))
+                            #f)))])
+    (with-syntax ([src-app (datum->syntax src-stx '#%app)]
+                  [operator operator]
+                  [lhs lhs]
+                  [rhs rhs])
+      (syntax/loc loc-stx
+        (src-app operator lhs rhs)))))
+  
 
 (define-for-syntax (build-chain stx original-stx)
   (syntax-case stx ()

@@ -14,3 +14,4 @@
 #;compare
 
 (compare 3 < 3 < 4)
+(compare 3 <= 3 < 4)
